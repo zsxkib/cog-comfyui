@@ -20,7 +20,7 @@ ALL_DIRECTORIES = [OUTPUT_DIR, INPUT_DIR, COMFYUI_TEMP_OUTPUT_DIR]
 mimetypes.add_type("image/webp", ".webp")
 
 # Save your example JSON to the same directory as predict.py
-api_json_file = "workflow_api.json"
+api_json_file = "workflow_api_ipadapter.json"
 
 
 class Predictor(BasePredictor):
@@ -71,7 +71,7 @@ class Predictor(BasePredictor):
         return output_path
 
     def update_workflow(self, workflow, **kwargs):
-        # Update KSampler settings (node 3)
+        # KSampler (node 3)
         sampler = workflow["3"]["inputs"]
         sampler["seed"] = kwargs.get("seed", sampler["seed"])
         sampler["steps"] = kwargs.get("steps", sampler["steps"])
@@ -79,13 +79,6 @@ class Predictor(BasePredictor):
         sampler["sampler_name"] = kwargs.get("sampler_name", sampler["sampler_name"])
         sampler["scheduler"] = kwargs.get("scheduler", sampler["scheduler"])
         sampler["denoise"] = kwargs.get("denoise", sampler["denoise"])
-        # Note: model, positive, negative, and latent_image are connections to other nodes,
-        # so we don't update them directly here
-
-        # Update Checkpoint Loader (node 4)
-        workflow["4"]["inputs"]["ckpt_name"] = kwargs.get(
-            "checkpoint", workflow["4"]["inputs"]["ckpt_name"]
-        )
 
         # Update Empty Latent Image (node 5)
         latent_image = workflow["5"]["inputs"]
@@ -95,72 +88,52 @@ class Predictor(BasePredictor):
             "batch_size", latent_image["batch_size"]
         )
 
-        # Update VAEDecode (node 8)
-        # Note: samples and vae are connections to other nodes, so we don't update them directly
-
-        # Update InstantID Model Loader (node 11)
-        workflow["11"]["inputs"]["instantid_file"] = kwargs.get(
-            "instantid_file", workflow["11"]["inputs"]["instantid_file"]
-        )
-
-        # Update Load Image (node 13)
+        # Load Image (node 13)
         if "image" in kwargs:
             workflow["13"]["inputs"]["image"] = kwargs["image"]
-        workflow["13"]["inputs"]["upload"] = "image"  # Ensure this is set to "image"
+        workflow["13"]["inputs"]["upload"] = "image"
 
-        # Update PreviewImage (node 15)
-        # Note: images is a connection to another node, so we don't update it directly
-
-        # Update ControlNet Loader (node 16)
-        workflow["16"]["inputs"]["control_net_name"] = kwargs.get(
-            "control_net_name", workflow["16"]["inputs"]["control_net_name"]
-        )
-
-        # Update InstantID Face Analysis (node 38)
-        workflow["38"]["inputs"]["provider"] = kwargs.get(
-            "face_analysis_provider", workflow["38"]["inputs"]["provider"]
-        )
-
-        # Update CLIP Text Encode (Prompt) (node 39)
+        # CLIP Text Encode (Prompt) (node 39)
         workflow["39"]["inputs"]["text"] = kwargs.get(
             "prompt", workflow["39"]["inputs"]["text"]
         )
-        # Note: clip is a connection to another node, so we don't update it directly
 
-        # Update CLIP Text Encode (Negative Prompt) (node 40)
+        # CLIP Text Encode (Negative Prompt) (node 40)
         workflow["40"]["inputs"]["text"] = kwargs.get(
             "negative_prompt", workflow["40"]["inputs"]["text"]
         )
-        # Note: clip is a connection to another node, so we don't update it directly
 
-        # Update Apply InstantID (node 60)
+        # Apply InstantID (node 60)
         instantid = workflow["60"]["inputs"]
         instantid["weight"] = kwargs.get("instantid_weight", instantid["weight"])
         instantid["start_at"] = kwargs.get("instantid_start_at", instantid["start_at"])
         instantid["end_at"] = kwargs.get("instantid_end_at", instantid["end_at"])
-        instantid["noise_offset"] = kwargs.get(
-            "noise_offset", instantid.get("noise_offset", 0.0)
+
+        # IPAdapter Advanced (node 72)
+        ipadapter = workflow["72"]["inputs"]
+        ipadapter["weight"] = kwargs.get("ipadapter_weight", ipadapter["weight"])
+        ipadapter["weight_type"] = kwargs.get(
+            "ipadapter_weight_type", ipadapter["weight_type"]
         )
-        instantid["ip_adapter_scale"] = kwargs.get(
-            "ip_adapter_scale", instantid.get("ip_adapter_scale", 0.8)
+        ipadapter["combine_embeds"] = kwargs.get(
+            "ipadapter_combine_embeds", ipadapter["combine_embeds"]
         )
-        instantid["reference_image_scale"] = kwargs.get(
-            "reference_image_scale", instantid.get("reference_image_scale", 1.0)
+        ipadapter["start_at"] = kwargs.get("ipadapter_start_at", ipadapter["start_at"])
+        ipadapter["end_at"] = kwargs.get("ipadapter_end_at", ipadapter["end_at"])
+        ipadapter["embeds_scaling"] = kwargs.get(
+            "ipadapter_embeds_scaling", ipadapter["embeds_scaling"]
         )
-        instantid["identity_scale"] = kwargs.get(
-            "identity_scale", instantid.get("identity_scale", 1.0)
-        )
-        # Note: instantid, insightface, control_net, image, model, positive, and negative
-        # are connections to other nodes, so we don't update them directly
 
         return workflow
 
     def predict(
         self,
-        image: Path = Input(description="An input image", default=None),
-        prompt: str = Input(default=""),
+        image: Path = Input(description="Input image for face reference", default=None),
+        prompt: str = Input(
+            default="Cyberpunk character, neon lights, futuristic implants, urban dystopia, high contrast, young man"
+        ),
         negative_prompt: str = Input(
-            description="Things you do not want to see in your image", default=""
+            default="NSFW, nudity, painting, drawing, illustration, glitch, deformed, mutated, cross-eyed, ugly, disfigured"
         ),
         seed: int = seed_helper.predict_seed(),
         steps: int = Input(default=30, description="Number of sampling steps"),
@@ -168,25 +141,11 @@ class Predictor(BasePredictor):
         sampler_name: str = Input(default="ddpm", description="Name of the sampler"),
         scheduler: str = Input(default="karras", description="Name of the scheduler"),
         denoise: float = Input(default=1.0, description="Denoising strength"),
-        # checkpoint: str = Input(
-        #     default="RealVisXL_V3.0_Turbo.safetensors",
-        #     description="Name of the checkpoint file",
-        # ),
-        width: int = Input(default=1016, description="Width of the output image"),
-        height: int = Input(default=1016, description="Height of the output image"),
+        width: int = Input(default=1600, description="Width of the output image"),
+        height: int = Input(default=1600, description="Height of the output image"),
         batch_size: int = Input(default=1, description="Batch size for generation"),
-        # instantid_file: str = Input(
-        #     default="instantid-ip-adapter.bin", description="InstantID model file"
-        # ),
-        # control_net_name: str = Input(
-        #     default="instantid-controlnet.safetensors",
-        #     description="Name of the ControlNet model",
-        # ),
-        # face_analysis_provider: str = Input(
-        #     default="CUDA", description="Provider for face analysis"
-        # ),
         instantid_weight: float = Input(
-            default=0.8, description="Weight of the InstantID effect"
+            default=0.6, description="Weight of the InstantID effect"
         ),
         instantid_start_at: float = Input(
             default=0.0, description="Start point of InstantID effect"
@@ -194,29 +153,60 @@ class Predictor(BasePredictor):
         instantid_end_at: float = Input(
             default=1.0, description="End point of InstantID effect"
         ),
-        noise_offset: float = Input(
-            default=0.0, description="Noise offset for InstantID"
+        ipadapter_weight: float = Input(
+            default=0.7, description="Weight of the IPAdapter effect"
         ),
-        ip_adapter_scale: float = Input(
-            default=0.8, description="Scale for IP-Adapter in InstantID"
+        ipadapter_weight_type: str = Input(
+            default="linear",
+            description="Weight type for IPAdapter",
+            choices=[
+                "linear",
+                "ease in",
+                "ease out",
+                "ease in-out",
+                "reverse in-out",
+                "weak input",
+                "weak output",
+                "weak middle",
+                "strong middle",
+                "style transfer",
+                "composition",
+                "strong style transfer",
+                "style and composition",
+                "style transfer precise",
+            ],
         ),
-        reference_image_scale: float = Input(
-            default=1.0, description="Scale for the reference image in InstantID"
+        ipadapter_combine_embeds: str = Input(
+            default="average",
+            description="Method to combine embeddings in IPAdapter",
+            choices=["concat", "add", "subtract", "average", "norm average"],
         ),
-        identity_scale: float = Input(
-            default=1.0, description="Scale for identity preservation in InstantID"
+        ipadapter_start_at: float = Input(
+            default=0.0, description="Start point of IPAdapter effect"
+        ),
+        ipadapter_end_at: float = Input(
+            default=1.0, description="End point of IPAdapter effect"
+        ),
+        ipadapter_embeds_scaling: str = Input(
+            default="V only",
+            description="Embeds scaling method for IPAdapter",
+            choices=["V only", "K+V", "K+V w/ C penalty", "K+mean(V) w/ C penalty"],
         ),
         output_format: str = optimise_images.predict_output_format(),
         output_quality: int = optimise_images.predict_output_quality(),
     ) -> List[Path]:
         """Run a single prediction on the model"""
-        self.comfyUI.cleanup(ALL_DIRECTORIES)
-
         # Hardcoded parameters
-        checkpoint = "RealVisXL_V3.0_Turbo.safetensors"
-        instantid_file = "instantid-ip-adapter.bin"
-        control_net_name = "instantid-controlnet.safetensors"
-        face_analysis_provider = "CUDA"
+        hardcoded_params = {
+            "checkpoint": "RealVisXL_V3.0_Turbo.safetensors",
+            "instantid_file": "instantid-ip-adapter.bin",
+            "control_net_name": "instantid-controlnet.safetensors",
+            "face_analysis_provider": "CUDA",
+            "ipadapter_file": "ip-adapter-plus-face_sdxl_vit-h.safetensors",
+            "clip_vision_file": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors",
+        }
+
+        self.comfyUI.cleanup(ALL_DIRECTORIES)
 
         seed = seed_helper.generate(seed)
 
@@ -238,21 +228,20 @@ class Predictor(BasePredictor):
             sampler_name=sampler_name,
             scheduler=scheduler,
             denoise=denoise,
-            checkpoint=checkpoint,
             width=width,
             height=height,
             batch_size=batch_size,
-            instantid_file=instantid_file,
             image=image_path,
-            control_net_name=control_net_name,
-            face_analysis_provider=face_analysis_provider,
             instantid_weight=instantid_weight,
             instantid_start_at=instantid_start_at,
             instantid_end_at=instantid_end_at,
-            noise_offset=noise_offset,
-            ip_adapter_scale=ip_adapter_scale,
-            reference_image_scale=reference_image_scale,
-            identity_scale=identity_scale,
+            ipadapter_weight=ipadapter_weight,
+            ipadapter_weight_type=ipadapter_weight_type,
+            ipadapter_combine_embeds=ipadapter_combine_embeds,
+            ipadapter_start_at=ipadapter_start_at,
+            ipadapter_end_at=ipadapter_end_at,
+            ipadapter_embeds_scaling=ipadapter_embeds_scaling,
+            **hardcoded_params,  # Include hardcoded parameters
         )
 
         wf = self.comfyUI.load_workflow(workflow)

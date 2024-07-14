@@ -1,14 +1,14 @@
 {
   "3": {
     "inputs": {
-      "seed": 577246684997616,
+      "seed": 1337,
       "steps": 30,
       "cfg": 4.5,
       "sampler_name": "ddpm",
       "scheduler": "karras",
       "denoise": 1,
       "model": [
-        "60",
+        "72",
         0
       ],
       "positive": [
@@ -40,8 +40,8 @@
   },
   "5": {
     "inputs": {
-      "width": 1016,
-      "height": 1016,
+      "width": 1600,
+      "height": 1600,
       "batch_size": 1
     },
     "class_type": "EmptyLatentImage",
@@ -76,7 +76,7 @@
   },
   "13": {
     "inputs": {
-      "image": "gitl-w-the-pearl-earring.webp",
+      "image": "pasted/image (8).png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -116,7 +116,7 @@
   },
   "39": {
     "inputs": {
-      "text": "comic character. graphic illustration, comic art, graphic novel art, vibrant, highly detailed",
+      "text": "Cyberpunk character, neon lights, futuristic implants, urban dystopia, high contrast, young man\n",
       "clip": [
         "4",
         1
@@ -129,7 +129,7 @@
   },
   "40": {
     "inputs": {
-      "text": "photograph, deformed, glitch, noisy, realistic, stock photo",
+      "text": "NSFW, nudity, painting, drawing, illustration, glitch, deformed, mutated, cross-eyed, ugly, disfigured",
       "clip": [
         "4",
         1
@@ -142,7 +142,7 @@
   },
   "60": {
     "inputs": {
-      "weight": 0.8,
+      "weight": 0.6,
       "start_at": 0,
       "end_at": 1,
       "instantid": [
@@ -177,6 +177,84 @@
     "class_type": "ApplyInstantID",
     "_meta": {
       "title": "Apply InstantID"
+    }
+  },
+  "68": {
+    "inputs": {
+      "ipadapter_file": "ip-adapter-plus-face_sdxl_vit-h.safetensors"
+    },
+    "class_type": "IPAdapterModelLoader",
+    "_meta": {
+      "title": "IPAdapter Model Loader"
+    }
+  },
+  "70": {
+    "inputs": {
+      "clip_name": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
+    },
+    "class_type": "CLIPVisionLoader",
+    "_meta": {
+      "title": "Load CLIP Vision"
+    }
+  },
+  "72": {
+    "inputs": {
+      "weight": 0.7000000000000001,
+      "weight_type": "linear",
+      "combine_embeds": "average",
+      "start_at": 0,
+      "end_at": 1,
+      "embeds_scaling": "V only",
+      "model": [
+        "60",
+        0
+      ],
+      "ipadapter": [
+        "68",
+        0
+      ],
+      "image": [
+        "13",
+        0
+      ],
+      "clip_vision": [
+        "70",
+        0
+      ]
+    },
+    "class_type": "IPAdapterAdvanced",
+    "_meta": {
+      "title": "IPAdapter Advanced"
+    }
+  },
+  "79": {
+    "inputs": {
+      "image": "pasted/image (7).png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "80": {
+    "inputs": {
+      "image": "pasted/image (8).png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "81": {
+    "inputs": {
+      "image": "pasted/image (9).png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
     }
   }
 }
