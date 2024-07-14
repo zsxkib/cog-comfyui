@@ -6,7 +6,7 @@ import mimetypes
 import json
 import shutil
 from PIL import Image, ExifTags
-from typing import List
+from typing import List, Iterator
 from cog import BasePredictor, Input, Path
 from comfyui import ComfyUI
 from cog_model_helpers import optimise_images
@@ -136,25 +136,77 @@ class Predictor(BasePredictor):
             default="NSFW, nudity, painting, drawing, illustration, glitch, deformed, mutated, cross-eyed, ugly, disfigured"
         ),
         seed: int = seed_helper.predict_seed(),
-        steps: int = Input(default=30, description="Number of sampling steps"),
-        cfg: float = Input(default=4.5, description="Classifier-free guidance scale"),
-        sampler_name: str = Input(default="ddpm", description="Name of the sampler"),
-        scheduler: str = Input(default="karras", description="Name of the scheduler"),
-        denoise: float = Input(default=1.0, description="Denoising strength"),
+        steps: int = Input(
+            default=30, description="Number of sampling steps", ge=1, le=50
+        ),
+        cfg: float = Input(
+            default=4.5, description="Classifier-free guidance scale", ge=0.01, le=10
+        ),
+        sampler_name: str = Input(
+            default="ddpm",
+            description="Name of the sampler",
+            choices=[
+                "euler",
+                "euler_ancestral",
+                "heun",
+                "heunpp2",
+                "dpm_2",
+                "dpm_2_ancestral",
+                "lms",
+                "dpm_fast",
+                "dpm_adaptive",
+                "dpmpp_2s_ancestral",
+                "dpmpp_sde",
+                "dpmpp_sde_gpu",
+                "dpmpp_2m",
+                "dpmpp_2m_sde",
+                "dpmpp_2m_sde_gpu",
+                "dpmpp_3m_sde",
+                "dpmpp_3m_sde_gpu",
+                "ddpm",
+                "lcm",
+                "ddim",
+                "uni_pc",
+                "uni_pc_bh2",
+            ],
+        ),
+        scheduler: str = Input(
+            default="karras",
+            description="Name of the scheduler",
+            choices=[
+                "normal",
+                "karras",
+                "exponential",
+                "sgm_uniform",
+                "simple",
+                "ddim_uniform",
+            ],
+        ),
+        denoise: float = Input(
+            default=1.0,
+            description="Denoising strength (recommended to keep at 1.0)",
+            ge=0,
+            le=1,
+        ),
         width: int = Input(default=1600, description="Width of the output image"),
         height: int = Input(default=1600, description="Height of the output image"),
-        batch_size: int = Input(default=1, description="Batch size for generation"),
+        batch_size: int = Input(
+            default=1,
+            description="Batch size for generation (higher values may cause OOM errors with large width/height)",
+            ge=1,
+            le=8,
+        ),
         instantid_weight: float = Input(
-            default=0.6, description="Weight of the InstantID effect"
+            default=0.6, description="Weight of the InstantID effect", ge=0.01, le=2
         ),
         instantid_start_at: float = Input(
-            default=0.0, description="Start point of InstantID effect"
+            default=0.0, description="Start point of InstantID effect", ge=0, le=1
         ),
         instantid_end_at: float = Input(
-            default=1.0, description="End point of InstantID effect"
+            default=1.0, description="End point of InstantID effect", ge=0, le=1
         ),
         ipadapter_weight: float = Input(
-            default=0.7, description="Weight of the IPAdapter effect"
+            default=0.7, description="Weight of the IPAdapter effect", ge=0.01, le=2
         ),
         ipadapter_weight_type: str = Input(
             default="linear",
@@ -182,10 +234,10 @@ class Predictor(BasePredictor):
             choices=["concat", "add", "subtract", "average", "norm average"],
         ),
         ipadapter_start_at: float = Input(
-            default=0.0, description="Start point of IPAdapter effect"
+            default=0.0, description="Start point of IPAdapter effect", ge=0, le=1
         ),
         ipadapter_end_at: float = Input(
-            default=1.0, description="End point of IPAdapter effect"
+            default=1.0, description="End point of IPAdapter effect", ge=0, le=1
         ),
         ipadapter_embeds_scaling: str = Input(
             default="V only",
@@ -194,7 +246,7 @@ class Predictor(BasePredictor):
         ),
         output_format: str = optimise_images.predict_output_format(),
         output_quality: int = optimise_images.predict_output_quality(),
-    ) -> List[Path]:
+    ) -> Iterator[Path]:
         """Run a single prediction on the model"""
         # Hardcoded parameters
         hardcoded_params = {
@@ -247,44 +299,23 @@ class Predictor(BasePredictor):
         wf = self.comfyUI.load_workflow(workflow)
         self.comfyUI.connect()
         self.comfyUI.run_workflow(wf)
-        print("DEBUG: Entering final section of predict function")
-        print(f"DEBUG: OUTPUT_DIR = {OUTPUT_DIR}")
-        print(f"DEBUG: Contents of OUTPUT_DIR: {os.listdir(OUTPUT_DIR)}")
-        print(
-            f"DEBUG: Contents of COMFYUI_TEMP_OUTPUT_DIR: {os.listdir(COMFYUI_TEMP_OUTPUT_DIR)}"
-        )
 
         # Move files from temp to output directory
         for file in self.comfyUI.get_files(COMFYUI_TEMP_OUTPUT_DIR):
             shutil.move(file, OUTPUT_DIR)
 
         output_files = self.comfyUI.get_files(OUTPUT_DIR)
-        print(f"DEBUG: output_files = {output_files}")
-        print(f"DEBUG: Type of output_files = {type(output_files)}")
 
         if not output_files:
             raise ValueError(
                 "No output files were generated. Check the ComfyUI logs for errors."
             )
 
-        print(f"DEBUG: output_format = {output_format}")
-        print(f"DEBUG: output_quality = {output_quality}")
-
         optimised_files = optimise_images.optimise_image_files(
             output_format, output_quality, output_files
         )
-        print(f"DEBUG: optimised_files = {optimised_files}")
-        print(f"DEBUG: Type of optimised_files = {type(optimised_files)}")
 
         result = [Path(str(file)) for file in optimised_files]
-        print(f"DEBUG: result = {result}")
-        print(f"DEBUG: Type of result = {type(result)}")
 
         for item in result:
-            print(f"DEBUG: Item in result = {item}")
-            print(f"DEBUG: Type of item = {type(item)}")
-            print(f"DEBUG: Item exists? {item.exists()}")
-            print(f"DEBUG: Item is file? {item.is_file()}")
-
-        print("DEBUG: About to return from predict function")
-        return result
+            yield item
