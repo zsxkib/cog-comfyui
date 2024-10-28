@@ -127,7 +127,13 @@
     "v2-1_768-nonema-pruned.safetensors",
     "wd-illusion-fp16.safetensors",
     "x4-upscaler-ema.safetensors",
-    "zavychromaxl_v80.safetensors"
+    "zavychromaxl_v80.safetensors",
+    "mochi_preview_dit_GGUF_Q4_0_v1.safetensors",
+    "mochi_preview_dit_GGUF_Q4_0_v2.safetensors",
+    "mochi_preview_dit_GGUF_Q8_0.safetensors",
+    "mochi_preview_dit_bf16.safetensors",
+    "mochi_preview_dit_fp8_e4m3fn.safetensors",
+    "mochi_preview_dit.safetensors"
   ],
   "UPSCALE_MODELS": [
     "4x-AnimeSharp.pth",
@@ -151,6 +157,8 @@
   "CLIP": [
     "clip_g.safetensors",
     "clip_l.safetensors",
+    "ComfyUI/models/clip/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors",
+    "mochi_preview_clip-t5-xxl_encoderonly-fp8_e4m3fn.safetensors",
     "models--QuanSun--EVA-CLIP",
     "sd15/model.fp16.safetensors",
     "sd15/model.safetensors",
@@ -474,7 +482,9 @@
     "sdxl_vae.safetensors",
     "stable-cascade/effnet_encoder.safetensors",
     "stable-cascade/stage_a.safetensors",
-    "vae-ft-mse-840000-ema-pruned.safetensors"
+    "mochi_preview_vae.safetensors",
+    "mochi_preview_vae_bf16.safetensors",
+    "mochi_preview_vae_stats.json"
   ],
   "UNET": [
     "flux1-dev.safetensors",

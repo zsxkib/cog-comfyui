@@ -1,0 +1,126 @@
+{
+  "1": {
+    "inputs": {
+      "prompt": "nature video of a red panda eating bamboo in front of a waterfall",
+      "strength": 1,
+      "force_offload": false,
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "MochiTextEncode",
+    "_meta": {
+      "title": "Mochi TextEncode"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "mochi_preview_clip-t5-xxl_encoderonly-fp8_e4m3fn.safetensors",
+      "type": "sd3"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "4": {
+    "inputs": {
+      "model": "mochi_preview_dit_GGUF_Q8_0.safetensors",
+      "vae": "mochi_preview_vae_bf16.safetensors",
+      "precision": "fp8_e4m3fn",
+      "attention_mode": "sdpa",
+      "trigger": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "DownloadAndLoadMochiModel",
+    "_meta": {
+      "title": "(Down)load Mochi Model"
+    }
+  },
+  "8": {
+    "inputs": {
+      "prompt": "",
+      "strength": 1,
+      "force_offload": true,
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "MochiTextEncode",
+    "_meta": {
+      "title": "Mochi TextEncode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "Mochi_preview",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "pingpong": false,
+      "save_output": false,
+      "images": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "14": {
+    "inputs": {
+      "width": 848,
+      "height": 480,
+      "num_frames": 49,
+      "steps": 30,
+      "cfg": 4.5,
+      "seed": 0,
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "1",
+        0
+      ],
+      "negative": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "MochiSampler",
+    "_meta": {
+      "title": "Mochi Sampler"
+    }
+  },
+  "15": {
+    "inputs": {
+      "enable_vae_tiling": true,
+      "num_tiles_w": 4,
+      "num_tiles_h": 4,
+      "overlap": 16,
+      "min_block_size": 1,
+      "vae": [
+        "4",
+        1
+      ],
+      "samples": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "MochiDecodeSpatialTiling",
+    "_meta": {
+      "title": "Mochi VAE Decode Spatial Tiling"
+    }
+  }
+}

@@ -196,5 +196,9 @@
   {
     "repo": "https://github.com/TheMistoAI/MistoControlNet-Flux-dev",
     "commit": "79e3982"
+  },
+  {
+    "repo": "https://github.com/kijai/ComfyUI-MochiWrapper",
+    "commit": "36a4275b3b8121ccf65df534fbd53f313757377a"
   }
 ]

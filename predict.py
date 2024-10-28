@@ -1,145 +1,161 @@
+# Simplified version with basic inputs only
 import os
-import shutil
-import tarfile
-import zipfile
 import mimetypes
-from PIL import Image
+import json
+import shutil
 from typing import List
 from cog import BasePredictor, Input, Path
 from comfyui import ComfyUI
-from weights_downloader import WeightsDownloader
-from cog_model_helpers import optimise_images
-from config import config
+import random
 
-
-os.environ["DOWNLOAD_LATEST_WEIGHTS_MANIFEST"] = "true"
-mimetypes.add_type("image/webp", ".webp")
 OUTPUT_DIR = "/tmp/outputs"
 INPUT_DIR = "/tmp/inputs"
 COMFYUI_TEMP_OUTPUT_DIR = "ComfyUI/temp"
 ALL_DIRECTORIES = [OUTPUT_DIR, INPUT_DIR, COMFYUI_TEMP_OUTPUT_DIR]
 
-with open("examples/api_workflows/sd15_txt2img.json", "r") as file:
-    EXAMPLE_WORKFLOW_JSON = file.read()
-
+api_json_file = "workflow_api.json"
 
 class Predictor(BasePredictor):
-    def setup(self, weights: str):
-        if bool(weights):
-            self.handle_user_weights(weights)
-
+    def setup(self):
         self.comfyUI = ComfyUI("127.0.0.1:8188")
         self.comfyUI.start_server(OUTPUT_DIR, INPUT_DIR)
 
-    def handle_user_weights(self, weights: str):
-        print(f"Downloading user weights from: {weights}")
-        WeightsDownloader.download("weights.tar", weights, config["USER_WEIGHTS_PATH"])
-        for item in os.listdir(config["USER_WEIGHTS_PATH"]):
-            source = os.path.join(config["USER_WEIGHTS_PATH"], item)
-            destination = os.path.join(config["MODELS_PATH"], item)
-            if os.path.isdir(source):
-                if not os.path.exists(destination):
-                    print(f"Moving {source} to {destination}")
-                    shutil.move(source, destination)
-                else:
-                    for root, _, files in os.walk(source):
-                        for file in files:
-                            if not os.path.exists(os.path.join(destination, file)):
-                                print(
-                                    f"Moving {os.path.join(root, file)} to {destination}"
-                                )
-                                shutil.move(os.path.join(root, file), destination)
-                            else:
-                                print(
-                                    f"Skipping {file} because it already exists in {destination}"
-                                )
+        # Add required weights from the workflow
+        with open(api_json_file, "r") as file:
+            workflow = json.loads(file.read())
+        self.comfyUI.handle_weights(
+            workflow,
+            weights_to_download=[
+                "mochi_preview_dit_fp8_e4m3fn.safetensors",
+                "mochi_preview_vae_bf16.safetensors",
+                "mochi_preview_clip-t5-xxl_encoderonly-fp8_e4m3fn.safetensors"
+            ],
+        )
 
-    def handle_input_file(self, input_file: Path):
-        file_extension = self.get_file_extension(input_file)
+    def update_workflow(self, workflow, **kwargs):
+        # Update positive prompt (Node 1)
+        positive_prompt = workflow["1"]["inputs"]
+        positive_prompt["prompt"] = kwargs["prompt"]
+        positive_prompt["strength"] = kwargs["prompt_strength"]
+        positive_prompt["force_offload"] = True  # Hardcoded
 
-        if file_extension == ".tar":
-            with tarfile.open(input_file, "r") as tar:
-                tar.extractall(INPUT_DIR)
-        elif file_extension == ".zip":
-            with zipfile.ZipFile(input_file, "r") as zip_ref:
-                zip_ref.extractall(INPUT_DIR)
-        elif file_extension in [".jpg", ".jpeg", ".png", ".webp"]:
-            shutil.copy(input_file, os.path.join(INPUT_DIR, f"input{file_extension}"))
-        else:
-            raise ValueError(f"Unsupported file type: {file_extension}")
+        # Update negative prompt (Node 8)
+        negative_prompt = workflow["8"]["inputs"]
+        negative_prompt["prompt"] = kwargs["negative_prompt"]
+        negative_prompt["strength"] = kwargs["prompt_strength"]
+        negative_prompt["force_offload"] = True  # Hardcoded
 
-        print("====================================")
-        print(f"Inputs uploaded to {INPUT_DIR}:")
-        self.comfyUI.get_files(INPUT_DIR)
-        print("====================================")
+        # Update sampler settings (Node 5)
+        sampler = workflow["5"]["inputs"]
+        sampler["width"] = kwargs["width"]
+        sampler["height"] = kwargs["height"]
+        sampler["num_frames"] = kwargs["num_frames"]
+        sampler["steps"] = kwargs["steps"]
+        sampler["cfg"] = kwargs["cfg"]
+        sampler["seed"] = kwargs["seed"]
 
-    def get_file_extension(self, input_file: Path) -> str:
-        file_extension = os.path.splitext(input_file)[1].lower()
-        if not file_extension:
-            with open(input_file, "rb") as f:
-                file_signature = f.read(4)
-            if file_signature.startswith(b"\x1f\x8b"):  # gzip signature
-                file_extension = ".tar"
-            elif file_signature.startswith(b"PK"):  # zip signature
-                file_extension = ".zip"
-            else:
-                try:
-                    with Image.open(input_file) as img:
-                        file_extension = f".{img.format.lower()}"
-                        print(f"Determined file type: {file_extension}")
-                except Exception as e:
-                    raise ValueError(
-                        f"Unable to determine file type for: {input_file}, {e}"
-                    )
-        return file_extension
+        # Update video settings (Node 9)
+        video_settings = workflow["9"]["inputs"]
+        video_settings["frame_rate"] = kwargs["fps"]
+        # Keep other video settings as default from workflow
+
+        # Add this: Update model settings (Node 4)
+        model_settings = workflow["4"]["inputs"]
+        model_settings["precision"] = "fp8_e4m3fn"  # Changed from fp8_e4m3fn_fast
+        model_settings["attention_mode"] = "sage_attn"  # Keep this the same
 
     def predict(
         self,
-        workflow_json: str = Input(
-            description="Your ComfyUI workflow as JSON. You must use the API version of your workflow. Get it from ComfyUI using ‘Save (API format)’. Instructions here: https://github.com/fofr/cog-comfyui",
-            default="",
+        prompt: str = Input(
+            description="Text prompt for the video generation",
+            default="nature video of a red panda eating bamboo in front of a waterfall"
         ),
-        input_file: Path = Input(
-            description="Input image, tar or zip file. Read guidance on workflows and input files here: https://github.com/fofr/cog-comfyui. Alternatively, you can replace inputs with URLs in your JSON workflow and the model will download them.",
-            default=None,
+        negative_prompt: str = Input(
+            description="Things you do not want to see in your video",
+            default=""
         ),
-        return_temp_files: bool = Input(
-            description="Return any temporary files, such as preprocessed controlnet images. Useful for debugging.",
-            default=False,
+        width: int = Input(
+            description="Width of the output video",
+            default=848,
+            ge=64,
+            le=2048
         ),
-        output_format: str = optimise_images.predict_output_format(),
-        output_quality: int = optimise_images.predict_output_quality(),
-        randomise_seeds: bool = Input(
-            description="Automatically randomise seeds (seed, noise_seed, rand_seed)",
-            default=True,
+        height: int = Input(
+            description="Height of the output video",
+            default=480,
+            ge=64,
+            le=2048
         ),
-        force_reset_cache: bool = Input(
-            description="Force reset the ComfyUI cache before running the workflow. Useful for debugging.",
-            default=False,
+        num_frames: int = Input(
+            description="Number of frames to generate",
+            default=163,
+            ge=1,
+            le=200
         ),
-    ) -> List[Path]:
+        steps: int = Input(
+            description="Number of sampling steps",
+            default=50,
+            ge=1,
+            le=100
+        ),
+        cfg: float = Input(
+            description="Classifier free guidance scale",
+            default=4.5,
+            ge=1.0,
+            le=20.0
+        ),
+        prompt_strength: float = Input(
+            description="Prompt strength",
+            default=1.0,
+            ge=0.0,
+            le=1.0
+        ),
+        fps: int = Input(
+            description="Frames per second",
+            default=24,
+            ge=1,
+            le=60
+        ),
+        seed: int = Input(
+            description="Random seed. Leave blank to randomize",
+            default=None
+        ),
+    ) -> Path:
         """Run a single prediction on the model"""
+        if width * height > 2048 * 2048:
+            raise ValueError("Resolution too high. Width * Height must be less than 2048 * 2048")
+
         self.comfyUI.cleanup(ALL_DIRECTORIES)
 
-        if input_file:
-            self.handle_input_file(input_file)
+        # Generate seed if not provided
+        if seed is None:
+            seed = random.randint(0, 2**32 - 1)
 
-        wf = self.comfyUI.load_workflow(workflow_json or EXAMPLE_WORKFLOW_JSON)
+        with open(api_json_file, "r") as file:
+            workflow = json.loads(file.read())
 
+        self.update_workflow(
+            workflow,
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            prompt_strength=prompt_strength,
+            width=width,
+            height=height,
+            num_frames=num_frames,
+            steps=steps,
+            cfg=cfg,
+            seed=seed,
+            fps=fps,
+        )
+
+        wf = self.comfyUI.load_workflow(workflow)
         self.comfyUI.connect()
-
-        if force_reset_cache or not randomise_seeds:
-            self.comfyUI.reset_execution_cache()
-
-        if randomise_seeds:
-            self.comfyUI.randomise_seeds(wf)
-
         self.comfyUI.run_workflow(wf)
 
-        output_directories = [OUTPUT_DIR]
-        if return_temp_files:
-            output_directories.append(COMFYUI_TEMP_OUTPUT_DIR)
-
-        return optimise_images.optimise_image_files(
-            output_format, output_quality, self.comfyUI.get_files(output_directories)
-        )
+        # Get the output video file
+        output_files = self.comfyUI.get_files(OUTPUT_DIR)
+        if not output_files:
+            raise RuntimeError("No output video generated")
+        
+        # Return the first (and should be only) video file
+        return output_files[0]
