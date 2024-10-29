@@ -26,9 +26,9 @@
   },
   "4": {
     "inputs": {
-      "model": "mochi_preview_dit_GGUF_Q8_0.safetensors",
-      "vae": "mochi_preview_vae_bf16.safetensors",
-      "precision": "fp8_e4m3fn",
+      "model": "mochi/mochi_preview_dit_bf16.safetensors",
+      "vae": "mochi/mochi_preview_vae_bf16.safetensors",
+      "precision": "bf16",
       "attention_mode": "sdpa",
       "trigger": [
         "8",
@@ -44,7 +44,7 @@
     "inputs": {
       "prompt": "",
       "strength": 1,
-      "force_offload": true,
+      "force_offload": false,
       "clip": [
         "1",
         1

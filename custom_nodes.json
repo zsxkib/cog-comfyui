@@ -25,10 +25,6 @@
     "commit": "1a24975"
   },
   {
-    "repo": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved",
-    "commit": "261fac8"
-  },
-  {
     "repo": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
     "commit": "0376e57"
   },
@@ -61,20 +57,12 @@
     "commit": "ef70435"
   },
   {
-    "repo": "https://github.com/shiimizu/ComfyUI-PhotoMaker-Plus",
-    "commit": "024da47"
-  },
-  {
     "repo": "https://github.com/pythongosssss/ComfyUI-Custom-Scripts",
     "commit": "626e001"
   },
   {
     "repo": "https://github.com/BadCafeCode/masquerade-nodes-comfyui",
     "commit": "432cb4d"
-  },
-  {
-    "repo": "https://github.com/Gourieff/comfyui-reactor-node",
-    "commit": "89dba21"
   },
   {
     "repo": "https://github.com/cubiq/ComfyUI_InstantID",

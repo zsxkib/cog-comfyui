@@ -43,7 +43,7 @@ class WeightsDownloader:
                     self.weights_map[weight_str]["dest"],
                 )
         else:
-            raise ValueError(
+            print(
                 f"{weight_str} unavailable. View the list of available weights: https://github.com/fofr/cog-comfyui/blob/main/supported_weights.md"
             )
 
@@ -64,8 +64,9 @@ class WeightsDownloader:
     def download(weight_str, url, dest):
         if "/" in weight_str:
             subfolder = weight_str.rsplit("/", 1)[0]
-            dest = os.path.join(dest, subfolder)
-            os.makedirs(dest, exist_ok=True)
+            dest_dir = os.path.join(dest, subfolder)
+            os.makedirs(dest_dir, exist_ok=True)
+            dest = dest_dir # NOTE: This is a hack to make tars extract to the correct directory (e.g. mochi/mochi_preview_dit_bf16.safetensors)
 
         print(f"⏳ Downloading {weight_str} to {dest}")
         start = time.time()
