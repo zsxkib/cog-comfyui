@@ -79,7 +79,7 @@ class Predictor(BasePredictor):
         sampler = workflow["14"]["inputs"]
         sampler["width"] = 848
         sampler["height"] = 480
-        sampler["num_frames"] = 163  # Hardcoded to match fal
+        sampler["num_frames"] = kwargs["num_frames"]
         sampler["steps"] = kwargs["steps"]
         sampler["cfg"] = 4.5  # Hardcoded CFG
         sampler["seed"] = kwargs["seed"]
@@ -102,6 +102,9 @@ class Predictor(BasePredictor):
         ),
         steps: int = Input(
             description="Number of sampling steps", default=30, ge=2, le=50
+        ),
+        num_frames: int = Input(
+            description="Number of frames to generate (maximum 163)", default=163, ge=2, le=163
         ),
         enable_vae_tiling: bool = Input(
             description="Enable VAE tiling to reduce memory usage, may cause artifacts e.g. seams",
@@ -132,6 +135,7 @@ class Predictor(BasePredictor):
             workflow,
             prompt=prompt,
             steps=steps,
+            num_frames=num_frames,
             seed=seed,
             enable_vae_tiling=enable_vae_tiling,
         )
