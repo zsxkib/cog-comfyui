@@ -477,8 +477,7 @@
     "stable-cascade/effnet_encoder.safetensors",
     "stable-cascade/stage_a.safetensors",
     "mochi/mochi_preview_vae.safetensors",
-    "mochi/mochi_preview_vae_bf16.safetensors",
-    "mochi/mochi_preview_vae_stats.json"
+    "mochi/mochi_preview_vae_bf16.safetensors"
   ],
   "UNET": [
     "flux1-dev.safetensors",

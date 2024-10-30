@@ -1,10 +1,10 @@
-mochi_preview_clip-t5-xxl_encoderonly-fp8_e4m3fn.safetensors
-mochi_preview_clip-t5-xxl_encoderonly-bf16.safetensors
-#mochi/mochi_preview_dit.safetensors
-#mochi/mochi_preview_dit_GGUF_Q4_0_v1.safetensors
-#mochi/mochi_preview_dit_GGUF_Q4_0_v2.safetensors
-mochi/mochi_preview_dit_GGUF_Q8_0.safetensors
-mochi/mochi_preview_dit_bf16.safetensors
-#mochi/mochi_preview_dit_fp8_e4m3fn.safetensors
-#mochi/mochi_preview_vae.safetensors
-mochi/mochi_preview_vae_bf16.safetensors
+https://weights.replicate.delivery/default/comfy-ui/clip/mochi_preview_clip-t5-xxl_encoderonly-fp8_e4m3fn.safetensors.tar ComfyUI/models/clip/mochi_preview_clip-t5-xxl_encoderonly-fp8_e4m3fn.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/clip/mochi_preview_clip-t5-xxl_encoderonly-bf16.safetensors.tar ComfyUI/models/clip/mochi_preview_clip-t5-xxl_encoderonly-bf16.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/diffusion_models/mochi/mochi_preview_dit.safetensors.tar ComfyUI/models/diffusion_models/mochi/mochi_preview_dit.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/diffusion_models/mochi/mochi_preview_dit_GGUF_Q4_0_v1.safetensors.tar ComfyUI/models/diffusion_models/mochi/mochi_preview_dit_GGUF_Q4_0_v1.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/diffusion_models/mochi/mochi_preview_dit_GGUF_Q4_0_v2.safetensors.tar ComfyUI/models/diffusion_models/mochi/mochi_preview_dit_GGUF_Q4_0_v2.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/diffusion_models/mochi/mochi_preview_dit_GGUF_Q8_0.safetensors.tar ComfyUI/models/diffusion_models/mochi/mochi_preview_dit_GGUF_Q8_0.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/diffusion_models/mochi/mochi_preview_dit_bf16.safetensors.tar ComfyUI/models/diffusion_models/mochi/mochi_preview_dit_bf16.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/diffusion_models/mochi/mochi_preview_dit_fp8_e4m3fn.safetensors.tar ComfyUI/models/diffusion_models/mochi/mochi_preview_dit_fp8_e4m3fn.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/vae/mochi/mochi_preview_vae.safetensors.tar ComfyUI/models/vae/mochi/mochi_preview_vae.safetensors.tar
+https://weights.replicate.delivery/default/comfy-ui/vae/mochi/mochi_preview_vae_bf16.safetensors.tar ComfyUI/models/vae/mochi/mochi_preview_vae_bf16.safetensors.tar

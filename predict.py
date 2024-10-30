@@ -1,6 +1,7 @@
 # Simplified version with basic inputs only
 import os
 import json
+import torch
 from cog import BasePredictor, Input, Path
 from comfyui import ComfyUI
 
@@ -8,15 +9,17 @@ OUTPUT_DIR = "/tmp/outputs"
 INPUT_DIR = "/tmp/inputs"
 COMFYUI_TEMP_OUTPUT_DIR = "ComfyUI/temp"
 ALL_DIRECTORIES = [OUTPUT_DIR, INPUT_DIR, COMFYUI_TEMP_OUTPUT_DIR]
+torch.set_default_dtype(torch.bfloat16)
 
 api_json_file = "workflow_api.json"
+
 
 class Predictor(BasePredictor):
     def setup(self):
         """
         Available model files:
 
-        CLIP Models (NOTE we don't need the `mochi/` prefix for CLIPs): 
+        CLIP Models (NOTE we don't need the `mochi/` prefix for CLIPs):
         - mochi_preview_clip-t5-xxl_encoderonly-bf16.safetensors
         - mochi_preview_clip-t5-xxl_encoderonly-fp8_e4m3fn.safetensors
 
@@ -35,7 +38,7 @@ class Predictor(BasePredictor):
         NOTE: When selecting different model variants (bf16/fp8/etc), the precision setting
         in Node 4 needs to match. Currently using fp8_e4m3fn precision, but other options include:
         - fp8_e4m3fn
-        - fp8_e4m3fn_fast 
+        - fp8_e4m3fn_fast
         - fp16
         - fp32
         - bf16
@@ -46,17 +49,17 @@ class Predictor(BasePredictor):
         # Add required weights from the workflow
         with open(api_json_file, "r") as file:
             workflow = json.loads(file.read())
-        
+
         self.dit_model = "mochi/mochi_preview_dit_bf16.safetensors"
         self.vae_model = "mochi/mochi_preview_vae_bf16.safetensors"
 
         for weight in [
-            "mochi_preview_clip-t5-xxl_encoderonly-bf16.safetensors", # CLIP
-            self.dit_model, # DIT 
-            self.vae_model, # VAE
+            "mochi_preview_clip-t5-xxl_encoderonly-bf16.safetensors",
+            self.dit_model,
+            self.vae_model,
         ]:
             self.comfyUI.weights_downloader.download_weights(weight)
-        
+
         self.model_precision = "bf16"
 
     def update_workflow(self, workflow, **kwargs):
@@ -68,22 +71,23 @@ class Predictor(BasePredictor):
 
         # Update negative prompt (Node 8)
         negative_prompt = workflow["8"]["inputs"]
-        negative_prompt["prompt"] = kwargs["negative_prompt"]
+        negative_prompt["prompt"] = ""  # Hardcoded empty negative prompt
         negative_prompt["strength"] = 1
         negative_prompt["force_offload"] = False
 
         # Update sampler settings (Node 14)
         sampler = workflow["14"]["inputs"]
-        sampler["width"] = kwargs["width"]
-        sampler["height"] = kwargs["height"]
-        sampler["num_frames"] = kwargs["num_frames"]
+        sampler["width"] = 848
+        sampler["height"] = 480
+        sampler["num_frames"] = 163  # Hardcoded to match fal
         sampler["steps"] = kwargs["steps"]
-        sampler["cfg"] = kwargs["cfg"]
+        sampler["cfg"] = 4.5  # Hardcoded CFG
         sampler["seed"] = kwargs["seed"]
+        sampler["enable_vae_tiling"] = kwargs["enable_vae_tiling"]
 
         # Update video settings (Node 9)
         video_settings = workflow["9"]["inputs"]
-        video_settings["frame_rate"] = kwargs["fps"]
+        video_settings["frame_rate"] = 30  # Hardcoded to match fal
 
         # Update model settings (Node 4)
         model_settings = workflow["4"]["inputs"]
@@ -94,79 +98,17 @@ class Predictor(BasePredictor):
         self,
         prompt: str = Input(
             description="Text prompt for the video generation",
-            default="nature video of a red panda eating bamboo in front of a waterfall"
-        ),
-        negative_prompt: str = Input(
-            description="Things you do not want to see in your video",
-            default=""
-        ),
-        width: int = Input(
-            description="Width of the output video",
-            default=848,
-            ge=64,
-            le=2048
-        ),
-        height: int = Input(
-            description="Height of the output video",
-            default=480,
-            ge=64,
-            le=2048
-        ),
-        num_frames: int = Input(
-            description="Number of frames to generate",
-            default=49,
-            ge=7,
-            le=200
+            default="nature video of a red panda eating bamboo in front of a waterfall",
         ),
         steps: int = Input(
-            description="Number of sampling steps",
-            default=30,
-            ge=2,
-            le=100
-        ),
-        cfg: float = Input(
-            description="Classifier free guidance scale",
-            default=4.5,
-            ge=1.0,
-            le=20.0
-        ),
-        fps: int = Input(
-            description="Frames per second",
-            default=24,
-            ge=1,
-            le=60
+            description="Number of sampling steps", default=30, ge=2, le=50
         ),
         enable_vae_tiling: bool = Input(
             description="Enable VAE tiling to reduce memory usage, may cause artifacts e.g. seams",
-            default=True
-        ),
-        num_tiles_w: int = Input(
-            description="Number of tiles horizontally for VAE decoding. Only used when enable_vae_tiling is True",
-            default=4,
-            ge=1,
-            le=8
-        ),
-        num_tiles_h: int = Input(
-            description="Number of tiles vertically for VAE decoding. Only used when enable_vae_tiling is True",
-            default=4,
-            ge=1,
-            le=8
-        ),
-        tile_overlap: int = Input(
-            description="Overlap between tiles in pixels. Only used when enable_vae_tiling is True. Higher values reduce seams but use more memory",
-            default=16,
-            ge=0,
-            le=64
-        ),
-        min_block_size: int = Input(
-            description="Minimum block size for tiling. Only used when enable_vae_tiling is True",
-            default=1,
-            ge=1,
-            le=32
+            default=False,
         ),
         seed: int = Input(
-            description="Random seed. Leave blank to randomize",
-            default=None
+            description="Random seed. Leave blank to randomize", default=None
         ),
     ) -> Path:
         """Run a single prediction on the model"""
@@ -179,41 +121,36 @@ class Predictor(BasePredictor):
 
         with open(api_json_file, "r") as file:
             workflow = json.loads(file.read())
-            
+
+        # NOTE: We need to do this because the Mochi ComfyUI nodes already look at `mochi/`
+        # but when we download weights we need to include the full `mochi/` prefix
+        # since they live in `ComfyUI/models/vae/mochi/` and `ComfyUI/models/diffusion_models/mochi/`
         workflow["4"]["inputs"]["model"] = self.dit_model.replace("mochi/", "")
         workflow["4"]["inputs"]["vae"] = self.vae_model.replace("mochi/", "")
 
         self.update_workflow(
             workflow,
             prompt=prompt,
-            negative_prompt=negative_prompt,
-            width=width,
-            height=height,
-            num_frames=num_frames,
             steps=steps,
-            cfg=cfg,
             seed=seed,
-            fps=fps,
             enable_vae_tiling=enable_vae_tiling,
-            num_tiles_w=num_tiles_w,
-            num_tiles_h=num_tiles_h,
-            tile_overlap=tile_overlap,
-            min_block_size=min_block_size,
         )
-        
+
         wf = self.comfyUI.load_workflow(workflow)
+        print("\n\n====================================")
+        print(wf)
+        print("====================================\n\n")
         self.comfyUI.connect()
         self.comfyUI.run_workflow(wf)
-        
+
         # Get all MP4 files from the temp directory, sorted by creation time
         video_files = self.comfyUI.get_files(
-            COMFYUI_TEMP_OUTPUT_DIR, 
-            file_extensions=["mp4"]
+            COMFYUI_TEMP_OUTPUT_DIR, file_extensions=["mp4"]
         )
-        
+
         if not video_files:
             raise RuntimeError("No output video generated")
-        
+
         # Get the most recently created file
         latest_video = max(video_files, key=lambda f: os.path.getctime(str(f)))
         return latest_video

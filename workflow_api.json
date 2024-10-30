@@ -104,7 +104,7 @@
   },
   "15": {
     "inputs": {
-      "enable_vae_tiling": true,
+      "enable_vae_tiling": false,
       "num_tiles_w": 4,
       "num_tiles_h": 4,
       "overlap": 16,

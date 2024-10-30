@@ -43,9 +43,10 @@ class WeightsDownloader:
                     self.weights_map[weight_str]["dest"],
                 )
         else:
-            print(
-                f"{weight_str} unavailable. View the list of available weights: https://github.com/fofr/cog-comfyui/blob/main/supported_weights.md"
-            )
+            if "mochi" not in weight_str:
+                print(
+                    f"{weight_str} unavailable. View the list of available weights: https://github.com/fofr/cog-comfyui/blob/main/supported_weights.md"
+                )
 
     def check_if_file_exists(self, weight_str, dest):
         if dest.endswith(weight_str):
@@ -57,7 +58,10 @@ class WeightsDownloader:
     def download_if_not_exists(self, weight_str, url, dest):
         if self.check_if_file_exists(weight_str, dest):
             print(f"✅ {weight_str} exists in {dest}")
+            print(f"⏭️  Skipping download of {weight_str}")
             return
+        print(f"❌ {weight_str} not found in {dest}")
+        print(f"⬇️  Will download {weight_str} from {url}")
         WeightsDownloader.download(weight_str, url, dest)
 
     @staticmethod
