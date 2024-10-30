@@ -9,7 +9,7 @@ OUTPUT_DIR = "/tmp/outputs"
 INPUT_DIR = "/tmp/inputs"
 COMFYUI_TEMP_OUTPUT_DIR = "ComfyUI/temp"
 ALL_DIRECTORIES = [OUTPUT_DIR, INPUT_DIR, COMFYUI_TEMP_OUTPUT_DIR]
-torch.set_default_dtype(torch.bfloat16)
+# torch.set_default_dtype(torch.fp8_e4m3fn) # NOTE: There is no fp8_e4m3fn dtype in PyTorch see https://gist.github.com/malfet/7874d96b99670c3da83cbb779ab770c6
 
 api_json_file = "workflow_api.json"
 
@@ -50,7 +50,7 @@ class Predictor(BasePredictor):
         with open(api_json_file, "r") as file:
             workflow = json.loads(file.read())
 
-        self.dit_model = "mochi/mochi_preview_dit_bf16.safetensors"
+        self.dit_model = "mochi/mochi_preview_dit_fp8_e4m3fn.safetensors"
         self.vae_model = "mochi/mochi_preview_vae_bf16.safetensors"
 
         for weight in [
@@ -60,7 +60,7 @@ class Predictor(BasePredictor):
         ]:
             self.comfyUI.weights_downloader.download_weights(weight)
 
-        self.model_precision = "bf16"
+        self.model_precision = "fp8_e4m3fn"
 
     def update_workflow(self, workflow, **kwargs):
         # Update positive prompt (Node 1)
