@@ -83,7 +83,10 @@ class Predictor(BasePredictor):
         sampler["steps"] = kwargs["steps"]
         sampler["cfg"] = 4.5  # Hardcoded CFG
         sampler["seed"] = kwargs["seed"]
-        sampler["enable_vae_tiling"] = kwargs["enable_vae_tiling"]
+
+        # Add VAE decode settings (Node 15)
+        vae_decode = workflow["15"]["inputs"]
+        vae_decode["enable_vae_tiling"] = kwargs["enable_vae_tiling"]
 
         # Update video settings (Node 9)
         video_settings = workflow["9"]["inputs"]
