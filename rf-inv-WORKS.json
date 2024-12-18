@@ -1,0 +1,245 @@
+{
+  "1": {
+    "inputs": {
+      "model": "hunyuan_video_720_fp8_e4m3fn.safetensors",
+      "base_precision": "bf16",
+      "quantization": "fp8_e4m3fn",
+      "load_device": "offload_device",
+      "attention_mode": "sdpa"
+    },
+    "class_type": "HyVideoModelLoader",
+    "_meta": {
+      "title": "HunyuanVideo Model Loader"
+    }
+  },
+  "7": {
+    "inputs": {
+      "model_name": "hunyuan_video_vae_bf16.safetensors",
+      "precision": "bf16"
+    },
+    "class_type": "HyVideoVAELoader",
+    "_meta": {
+      "title": "HunyuanVideo VAE Loader"
+    }
+  },
+  "16": {
+    "inputs": {
+      "llm_model": "Kijai/llava-llama-3-8b-text-encoder-tokenizer",
+      "clip_model": "disabled",
+      "precision": "fp16",
+      "apply_final_norm": false,
+      "hidden_state_skip_layer": 2,
+      "quantization": "disabled"
+    },
+    "class_type": "DownloadAndLoadHyVideoTextEncoder",
+    "_meta": {
+      "title": "(Down)Load HunyuanVideo TextEncoder"
+    }
+  },
+  "43": {
+    "inputs": {
+      "clip_name": "clip-vit-large-patch14/model.safetensors",
+      "type": "stable_diffusion"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "60": {
+    "inputs": {
+      "video": "2024-12-03-18:25:47_seed47039_A cat walks on the grass, realistic style..mp4",
+      "force_rate": 0,
+      "force_size": "Disabled",
+      "custom_width": 512,
+      "custom_height": 512,
+      "frame_load_cap": 49,
+      "skip_first_frames": 0,
+      "select_every_nth": 1
+    },
+    "class_type": "VHS_LoadVideo",
+    "_meta": {
+      "title": "Load Video (Upload) 🎥🅥🅗🅢"
+    }
+  },
+  "61": {
+    "inputs": {
+      "enable_vae_tiling": true,
+      "temporal_tiling_sample_size": 64,
+      "spatial_tile_sample_min_size": 256,
+      "auto_tile_size": true,
+      "vae": [
+        "7",
+        0
+      ],
+      "image": [
+        "71",
+        0
+      ]
+    },
+    "class_type": "HyVideoEncode",
+    "_meta": {
+      "title": "HunyuanVideo Encode"
+    }
+  },
+  "62": {
+    "inputs": {
+      "width": 768,
+      "height": 768,
+      "upscale_method": "lanczos",
+      "keep_proportion": true,
+      "divisible_by": 16,
+      "crop": "disabled",
+      "image": [
+        "60",
+        0
+      ]
+    },
+    "class_type": "ImageResizeKJ",
+    "_meta": {
+      "title": "Resize Image"
+    }
+  },
+  "65": {
+    "inputs": {
+      "prompt": "cat with goofy big sunglasses, masterpiece, best quality",
+      "force_offload": true,
+      "prompt_template": "video",
+      "text_encoders": [
+        "16",
+        0
+      ],
+      "clip_l": [
+        "43",
+        0
+      ]
+    },
+    "class_type": "HyVideoTextEncode",
+    "_meta": {
+      "title": "HunyuanVideo TextEncode"
+    }
+  },
+  "66": {
+    "inputs": {
+      "enable_vae_tiling": true,
+      "temporal_tiling_sample_size": 64,
+      "spatial_tile_sample_min_size": 128,
+      "auto_tile_size": true,
+      "vae": [
+        "7",
+        0
+      ],
+      "samples": [
+        "78",
+        0
+      ]
+    },
+    "class_type": "HyVideoDecode",
+    "_meta": {
+      "title": "HunyuanVideo Decode"
+    }
+  },
+  "69": {
+    "inputs": {
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "HunyuanVideo",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "pingpong": false,
+      "save_output": false,
+      "images": [
+        "66",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "70": {
+    "inputs": {},
+    "class_type": "HyVideoEmptyTextEmbeds",
+    "_meta": {
+      "title": "HunyuanVideo Empty Text Embeds"
+    }
+  },
+  "71": {
+    "inputs": {
+      "image": [
+        "62",
+        0
+      ]
+    },
+    "class_type": "GetImageSizeAndCount",
+    "_meta": {
+      "title": "Get Image Size & Count"
+    }
+  },
+  "78": {
+    "inputs": {
+      "steps": 30,
+      "embedded_guidance_scale": 6,
+      "flow_shift": 1,
+      "force_offload": true,
+      "start_step": 0,
+      "end_step": 13,
+      "eta_base": 0.7000000000000001,
+      "eta_trend": "linear_decrease",
+      "interpolation_curve": 0,
+      "model": [
+        "1",
+        0
+      ],
+      "hyvid_embeds": [
+        "65",
+        0
+      ],
+      "samples": [
+        "61",
+        0
+      ],
+      "inversed_latents": [
+        "80",
+        0
+      ]
+    },
+    "class_type": "HyVideoReSampler",
+    "_meta": {
+      "title": "HunyuanVideo ReSampler"
+    }
+  },
+  "80": {
+    "inputs": {
+      "steps": 30,
+      "embedded_guidance_scale": 0,
+      "flow_shift": 1,
+      "seed": 1,
+      "force_offload": true,
+      "gamma": 0.6,
+      "start_step": 0,
+      "end_step": 27,
+      "gamma_trend": "constant",
+      "interpolation_curve": 0,
+      "model": [
+        "1",
+        0
+      ],
+      "hyvid_embeds": [
+        "70",
+        0
+      ],
+      "samples": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "HyVideoInverseSampler",
+    "_meta": {
+      "title": "HunyuanVideo Inverse Sampler"
+    }
+  }
+}

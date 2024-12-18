@@ -196,8 +196,8 @@
   {
     "repo": "https://github.com/TheMistoAI/MistoControlNet-Flux-dev",
     "commit": "79e3982"
-  },
-  {
+    },
+    {
     "repo": "https://github.com/logtd/ComfyUI-Fluxtapoz",
     "commit": "4d30397"
   },
@@ -207,7 +207,12 @@
     "notes": "Fork of https://github.com/balazik/ComfyUI-PuLID-Flux which fixes forward_orig method"
   },
   {
+    "repo": "https://github.com/Iemand005/ComfyUI-Touchpad-Gestures",
+    "commit": "dd6e5c7",
+    "notes": "Adds touchpad/trackpad gesture support for panning and zooming"
+  },
+  {
     "repo": "https://github.com/kijai/ComfyUI-HunyuanVideoWrapper",
-    "commit": "9b92a1d"
+    "commit": "8a27384"
   }
 ]
